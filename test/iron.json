@@ -1,0 +1,69 @@
+{
+    "periodic_system": {
+        "bounding_box": [
+            [
+                -2.71176,
+                2.71176,
+                2.71176
+            ],
+            [
+                2.71176,
+                -2.71176,
+                2.71176
+            ],
+            [
+                2.71176,
+                2.71176,
+                -2.71176
+            ]
+        ],
+        "atoms": [
+            {
+                "symbol": "Fe",
+                "position": [
+                    0,
+                    0,
+                    0
+                ],
+                "pseudopotential": "../Fe.upf",
+                "magnetic_moment": 4
+            }
+        ]
+    },
+    "model_kwargs": {
+        "xc": [
+            ":gga_x_pbe",
+            ":gga_c_pbe"
+        ],
+        "temperature": 0.001,
+        "smearing": {
+            "$symbol": "Smearing.Gaussian"
+        }
+    },
+    "basis_kwargs": {
+        "kgrid": [
+            2,
+            2,
+            2
+        ],
+        "Ecut": 10
+    },
+    "scf": {
+        "$function": "self_consistent_field",
+        "checkpointfile": "scfres.jld2",
+        "$kwargs": {
+            "mixing": {
+                 "$symbol": "KerkerDosMixing"
+            },
+            "is_converged": {
+                 "$symbol": "ScfConvergenceEnergy",
+                 "$args": 1.0e-4
+            }
+        }
+    },
+    "postscf": [
+        {
+            "$function": "compute_forces_cart"
+        }
+    ]
+}
