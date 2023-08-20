@@ -36,7 +36,8 @@ function build_system(data)
         Atom(symbol, position; pseudopotential, magnetic_moment)
     end
 
-    bounding_box = convert(Vector{Vector{Float64}}, data["periodic_system"]["bounding_box"]) * u"bohr"
+    bounding_box = convert(Vector{Vector{Float64}},
+                           data["periodic_system"]["bounding_box"]) * u"bohr"
     periodic_system(atoms, bounding_box)
 end
 
