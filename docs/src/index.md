@@ -4,10 +4,15 @@ CurrentModule = AiidaDFTK
 
 # AiidaDFTK
 
-Documentation for [AiidaDFTK](https://github.com/mfherbst/AiidaDFTK.jl).
+Julia-side implementation of the Aiida plugin of [DFTK](https://dftk.org).
 
-```@index
-```
+Enables running a DFTK calculation from a JSON file,
+such that all computed results are again available in JSON or HDF5 for programmatic parsing.
+
+!!! note "TODO"
+    We should document the expected Julia setup (with regards to MPI, MKL (Blas / FFT), etc.).
+
+## API and supported methods
 
 ```@autodocs
 Modules = [AiidaDFTK]

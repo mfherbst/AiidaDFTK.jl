@@ -2,6 +2,7 @@ module AiidaDFTK
 using Logging
 using AtomsBase
 using DFTK
+using DocStringExtensions
 using InteractiveUtils
 using JLD2
 using JSON3
@@ -13,10 +14,17 @@ using Pkg
 
 export run_json
 
+@template METHODS =
+"""
+$(TYPEDSIGNATURES)
+
+$(DOCSTRING)
+"""
+
 include("parse_kwargs.jl")
 include("store_hdf5.jl")
 
-"""Helper function to check whether we are on the master process"""
+# Helper function to check whether we are on the master process
 mpi_master(comm=MPI.COMM_WORLD) = (MPI.Init(); MPI.Comm_rank(comm) == 0)
 
 function build_system(data)
@@ -88,10 +96,9 @@ end
 
 
 """
-    run_json(filename::AbstractString)
-
 Run a DFTK calculation from a json input file.
 Output is by default written to `stdout` and `stderr`.
+The list of generated output files is returned.
 """
 function run_json(filename::AbstractString; extra_output_files=String[])
     all_output_files = copy(extra_output_files)
@@ -146,8 +153,6 @@ end
 
 
 """
-    run()
-
 Run a DFTK calculation from a json input file. The input file name is expected to be passed
 as the first argument when calling Julia (i.e. it should be available via `ARGS`. This
 function is expected to be called from queuing system jobscripts, for example:

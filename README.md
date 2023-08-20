@@ -6,3 +6,6 @@
 [![Coverage](https://codecov.io/gh/mfherbst/AiidaDFTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/mfherbst/AiidaDFTK.jl)
 
 Julia-side implementation of the Aiida plugin of [DFTK](https://dftk.org).
+
+Enables running a DFTK calculation from a JSON file,
+such that all computed results are again available in JSON or HDF5 for programmatic parsing.
