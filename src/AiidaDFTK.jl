@@ -162,8 +162,9 @@ function is expected to be called from queuing system jobscripts, for example:
 julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 ```
 
-It automatically dumps a logfile `\$(ARGS[1]).log` (i.e. name of the input file
-with the log extension), which contains all logging from DFTK.
+It automatically dumps a logfile `file.log` (i.e. basename of the input file
+with the log extension), which contains the log messages (i.e. @info, @warn, ...).
+Currently stdout  and stderr is still printed.
 """
 function run()
     # TODO Json logger ?
