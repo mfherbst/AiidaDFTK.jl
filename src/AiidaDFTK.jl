@@ -121,6 +121,14 @@ function run_json(filename::AbstractString; extra_output_files=String[])
         println()
     end
 
+    # Threading setup ... maybe later need to take parameters
+    # from the JSON into account
+    if mpi_master()
+        disable_threading()
+    else
+        setup_threading()
+    end
+
     DFTK.reset_timer!(DFTK.timer)
     system = build_system(data)
     basis  = build_basis(data, system)
