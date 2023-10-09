@@ -124,34 +124,43 @@ using UnitfulAtomic
 
     @testset "Functionality test run_json" begin
         using AiidaDFTK
-        inputfile = "iron.json"
-        ref_energy = -117.153287
 
-        # We need to do this below @__DIR__ because the iron.json contains relative paths
-        mktempdir(@__DIR__) do dir
-            # Run SCF and check we got all expected files
-            cd(dir) do
-                (; output_files) = run_json(joinpath(@__DIR__, inputfile))
-                for file in output_files
-                    @test isfile(file)
+        function run_functionality_test(inputfile, ref_energy; slim=true)
+            @testset "$inputfile" begin
+            # We need to do this below @__DIR__ because the iron.json contains relative paths
+            mktempdir(@__DIR__) do dir
+                # Run SCF and check we got all expected files
+                cd(dir) do
+                    (; output_files) = run_json(joinpath(@__DIR__, inputfile))
+                    for file in output_files
+                        @test isfile(file)
+                    end
+                end
+
+                if slim
+                    @test !isfile("scfres.jld2")
+                else
+                    # Check SCF converged to the right spot
+                    let scfres = load_scfres(joinpath(dir, "scfres.jld2"))
+                        @test scfres.converged
+                        @test abs(scfres.energies.total - ref_energy) < 1e-2
+                    end
+                end
+
+                # Check the self_consistent_field.json has all expected keys
+                open(joinpath(dir, "self_consistent_field.json")) do io
+                    data = JSON3.read(io)
+                    # Energy terms should sum to total, so if we sum all values:
+                    @test abs(data["energies"]["total"] - ref_energy) < 1e-2
+                    @test sum(values(data["energies"])) ≈ 2data["energies"]["total"]
+
+                    # TODO Put tests for all keys here, which are read by Aiida
                 end
             end
-
-            # Check SCF converged to the right spot
-            let scfres = load_scfres(joinpath(dir, "scfres.jld2"))
-                @test scfres.converged
-                @test abs(scfres.energies.total - ref_energy) < 1e-2
-            end
-
-            # Check the self_consistent_field.json has all expected keys
-            open(joinpath(dir, "self_consistent_field.json")) do io
-                data = JSON3.read(io)
-                # Energy terms should sum to total, so if we sum all values:
-                @test abs(data["energies"]["total"] - ref_energy) < 1e-2
-                @test sum(values(data["energies"])) ≈ 2data["energies"]["total"]
-
-                # TODO Put tests for all keys here, which are read by Aiida
             end
         end
+
+        run_functionality_test("iron.json",         -117.153287)
+        run_functionality_test("silicon_slim.json", -7.8380925)
     end
 end

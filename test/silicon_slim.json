@@ -1,0 +1,83 @@
+{
+    "periodic_system": {
+        "bounding_box": [
+            [
+                0.0,
+                5.1315509220433,
+                5.1315509220433
+            ],
+            [
+                5.1315509220433,
+                0.0,
+                5.1315509220433
+            ],
+            [
+                5.1315509220433,
+                5.1315509220433,
+                0.0
+            ]
+        ],
+        "atoms": [
+            {
+                "symbol": "Si",
+                "position": [
+                    1.282887730510825,
+                    1.282887730510825,
+                    1.282887730510825
+                ],
+                "pseudopotential": "hgh/lda/si-q4"
+            },
+            {
+                "symbol": "Si",
+                "position": [
+                    -1.282887730510825,
+                    -1.282887730510825,
+                    -1.282887730510825
+                ],
+                "pseudopotential": "hgh/lda/si-q4"
+            }
+        ]
+    },
+    "model_kwargs": {
+        "xc": [
+            ":lda_x",
+            ":lda_c_pw"
+        ],
+        "temperature": 0.001,
+        "smearing": {
+            "$symbol": "Smearing.Gaussian"
+        }
+    },
+    "basis_kwargs": {
+        "kgrid": [
+            2,
+            2,
+            2
+        ],
+        "Ecut": 10
+    },
+    "scf_parameters": {
+        "tol": 1.0e-8,
+        "damping": null,
+        "mixing": null
+    },
+    "scf": {
+        "$function": "self_consistent_field",
+        "checkpointfile": "scfres.jld2",
+        "store_slim": true,
+        "$kwargs": {
+            "mixing": {
+                 "$symbol": "KerkerDosMixing"
+            },
+            "is_converged": {
+                 "$symbol": "ScfConvergenceEnergy",
+                 "$args": 1.0e-4
+            }
+        }
+    },
+    "postscf": [
+        {
+            "$function": "compute_stresses_cart"
+        }
+    ]
+}
