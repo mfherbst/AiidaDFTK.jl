@@ -54,7 +54,7 @@ end
 
 function save_slim_json(filename, scfres)
     if mpi_master()
-        data = Dict("energies" => DFTK.todict(scfres.energies))
+        data = Dict{String,Any}("energies" => DFTK.todict(scfres.energies))
         for key in (:converged, :εF, :n_iter)
             data[string(key)] = getproperty(scfres, key)
         end
@@ -78,13 +78,17 @@ function run_self_consistent_field(data, system, basis)
     kwargs = parse_kwargs(data["scf"]["\$kwargs"])
     scfres = self_consistent_field(basis; ρ, ψ, kwargs...)
 
-    if mpi_nprocs() > 1  # TODO This is a dirty hack!
+    store_slim = get(data["scf"], "store_slim", mpi_nprocs() > 1)
+    if store_slim  # TODO All this is a dirty hack for now ...
         save_slim_json("self_consistent_field.json", scfres)
+        output_files = ["self_consistent_field.json"]
+
     else
         save_scfres(checkpointfile, scfres);
         save_scfres("self_consistent_field.json", scfres)
+        output_files = [checkpointfile, "self_consistent_field.json"]
     end
-    (; scfres, output_files=[checkpointfile, "self_consistent_field.json"])
+    (; scfres, output_files)
 end
 
 function run_scf(data, system, basis)
