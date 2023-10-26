@@ -75,7 +75,8 @@ function run_self_consistent_field(data, system, basis)
 
     # TODO there is a way to write periodic checkpoints ...
 
-    kwargs = parse_kwargs(data["scf"]["\$kwargs"])
+    interpolations = Dict("basis" => basis, "model" => basis.model)
+    kwargs = parse_kwargs(data["scf"]["\$kwargs"]; interpolations)
     scfres = self_consistent_field(basis; ρ, ψ, kwargs...)
 
     store_slim = get(data["scf"], "store_slim", mpi_nprocs() > 1)

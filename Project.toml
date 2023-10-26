@@ -1,7 +1,7 @@
 name = "AiidaDFTK"
 uuid = "26386dbc-b74b-4d9a-b75a-41d28ada84fc"
 authors = ["Michael F. Herbst <info@michael-herbst.com> and contributors"]
-version = "0.1.2"
+version = "0.1.3"
 
 [deps]
 AtomsBase = "a963bdd2-2df7-4f54-a1ee-49d51e6be12a"
@@ -33,8 +33,9 @@ julia = "1.7"
 
 [extras]
 AtomsBaseTesting = "ed7c10db-df7e-4efa-a7be-4f4190f7f227"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["AtomsBaseTesting", "StaticArrays", "Test"]
+test = ["AtomsBaseTesting", "LinearAlgebra", "StaticArrays", "Test"]
