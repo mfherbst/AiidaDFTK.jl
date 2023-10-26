@@ -3,6 +3,7 @@ using AtomsBase
 using AtomsBaseTesting
 using DFTK
 using JSON3
+using LinearAlgebra
 using StaticArrays
 using Test
 using Unitful
@@ -30,6 +31,16 @@ using UnitfulAtomic
                                        "\$args" => [2]))
         ref = Dict(:smearing => DFTK.Smearing.MethfesselPaxton(2))
         @test parse_kwargs(data) == ref
+    end
+
+    @testset "parse_kwargs with interpolations" begin
+        model = Model(Matrix(I, 3, 3); n_electrons=4)
+        interpolations = Dict("model" => model, )
+        data = Dict("nbandsalg" => Dict("\$symbol" => "AdaptiveBands",
+                                        "\$args"   => ["\$model"],
+                                        "\$kwargs" => Dict("n_bands_converge" => 8, )))
+        ref = Dict(:nbandsalg => DFTK.AdaptiveBands(model; n_bands_converge=8))
+        @test parse_kwargs(data; interpolations) == ref
     end
 
     @testset "build_system" begin

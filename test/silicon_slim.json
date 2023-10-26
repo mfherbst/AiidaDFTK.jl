@@ -69,6 +69,13 @@
             "mixing": {
                  "$symbol": "KerkerDosMixing"
             },
+            "nbandsalg": {
+                 "$symbol": "AdaptiveBands",
+                 "$args": ["$model"],
+                 "$kwargs": {
+                     "n_bands_converge": 8
+                 }
+            },
             "is_converged": {
                  "$symbol": "ScfConvergenceEnergy",
                  "$args": 1.0e-4
