@@ -26,6 +26,7 @@ include("store_hdf5.jl")
 
 # Helper function to check whether we are on the master process
 mpi_master(comm=MPI.COMM_WORLD) = (MPI.Init(); MPI.Comm_rank(comm) == 0)
+mpi_nprocs(comm=MPI.COMM_WORLD) = (MPI.Init(); MPI.Comm_size(comm))
 
 function build_system(data)
     atoms = map(data["periodic_system"]["atoms"]) do atom
@@ -145,7 +146,7 @@ function run_json(filename::AbstractString; extra_output_files=String[])
 
     # Threading setup ... maybe later need to take parameters
     # from the JSON into account
-    if mpi_master()
+    if mpi_nprocs() > 1
         disable_threading()
     else
         setup_threading()
