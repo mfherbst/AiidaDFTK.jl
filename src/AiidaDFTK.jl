@@ -14,6 +14,9 @@ using Pkg
 
 export run_json
 
+export build_system
+export build_basis
+
 @template METHODS =
 """
 $(TYPEDSIGNATURES)
@@ -33,8 +36,9 @@ function build_system(data)
         symbol   = Symbol(atom["symbol"])
         position = convert(Vector{Float64}, atom["position"]) * u"bohr"
         pseudopotential = atom["pseudopotential"]
+        rcut_val = get(atom, "rcut", nothing)
         magnetic_moment = get(atom, "magnetic_moment", 0.0)
-        Atom(symbol, position; pseudopotential, magnetic_moment)
+        Atom(symbol, position; pseudopotential, rcut=rcut_val, magnetic_moment)
     end
 
     bounding_box = convert(Vector{Vector{Float64}},
