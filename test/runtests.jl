@@ -12,12 +12,25 @@ using UnitfulAtomic
 @testset "AiidaDFTK.jl" begin
     system_silicon = periodic_system(
         [Atom(:Si, [ 1.28,  1.28,  1.28]u"bohr";
-              pseudopotential="hgh/lda/si-q4", magnetic_moment=0),
+              pseudopotential="hgh/lda/si-q4",
+              pseudopotential_kwargs=Dict(),
+              magnetic_moment=0.0),
          Atom(:Si, [-1.28, -1.28, -1.28]u"bohr";
-              pseudopotential="hgh/lda/si-q4", magnetic_moment=0)],
+              pseudopotential="hgh/lda/si-q4",
+              pseudopotential_kwargs=Dict(),
+              magnetic_moment=0.0)],
         [[0.0, 5.13, 5.13],
          [5.13, 0.0, 5.13],
          [5.13, 5.13, 0.0]]u"bohr"
+    )
+    system_iron = periodic_system(
+        [Atom(:Fe, [0, 0, 0]u"bohr";
+              pseudopotential="Fe.upf",
+              pseudopotential_kwargs=Dict(:rcut => 10, ),
+              magnetic_moment=4.0)],
+        [[-2.711,  2.711,  2.711],
+         [ 2.711, -2.711,  2.711],
+         [ 2.711,  2.711, -2.711]]u"bohr"
     )
 
     @testset "parse_kwargs" begin
@@ -43,7 +56,7 @@ using UnitfulAtomic
         @test parse_kwargs(data; interpolations) == ref
     end
 
-    @testset "build_system" begin
+    @testset "build_system silicon" begin
         data = Dict("bounding_box" => [[0.0, 5.13, 5.13],
                                        [5.13, 0.0, 5.13],
                                        [5.13, 5.13, 0.0]],
@@ -57,7 +70,22 @@ using UnitfulAtomic
         test_approx_eq(res, system_silicon)
     end
 
-    @testset "build_basis" begin
+    @testset "build_system iron" begin
+        pseudo = Dict("rcut" => 10, )
+        data = Dict("bounding_box" => [[-2.711,  2.711,  2.711],
+                                       [ 2.711, -2.711,  2.711],
+                                       [ 2.711,  2.711, -2.711]],
+                    "atoms" => [Dict("symbol" => "Fe",
+                                     "position" => [0, 0, 0],
+                                     "pseudopotential" => "Fe.upf",
+                                     "magnetic_moment" => 4.0,
+                                     "pseudopotential_kwargs" => pseudo,
+                                    )])
+        res = AiidaDFTK.build_system(Dict("periodic_system" => data))
+        test_approx_eq(res, system_iron)
+    end
+
+    @testset "build_basis silicon" begin
         smearing = Dict("\$symbol" => "Smearing.MethfesselPaxton", "\$args" => [1])
         data = Dict(
             "model_kwargs" => Dict("xc" => [":lda_x", ":lda_c_pw"],
@@ -90,6 +118,25 @@ using UnitfulAtomic
         @test basis.kcoords_global == ref_basis.kcoords_global
         @test basis.kweights       == ref_basis.kweights
         @test basis.symmetries_respect_rgrid == ref_basis.symmetries_respect_rgrid
+    end
+
+    @testset "build_basis iron" begin
+        # Check some more specific things for iron
+
+        smearing = Dict("\$symbol" => "Smearing.MarzariVanderbilt")
+        data = Dict(
+            "model_kwargs" => Dict("xc" => [":gga_x_pbe", ":gga_c_pbe"],
+                                   "temperature" => 1e-2,
+                                   "smearing" => smearing),
+            "basis_kwargs" => Dict("kgrid" => [4, 4, 4], "Ecut" => 15),
+        )
+        basis = AiidaDFTK.build_basis(data, system_iron)
+
+        @test basis.model.smearing == Smearing.MarzariVanderbilt()
+        @test length(basis.model.atoms) == 1
+        @test basis.model.atoms[1]     isa ElementPsp
+        @test basis.model.atoms[1].psp isa PspUpf
+        @test basis.model.atoms[1].psp.rcut == 10
     end
 
     @testset "store_hdf5" begin

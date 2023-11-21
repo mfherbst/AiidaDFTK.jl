@@ -12,13 +12,13 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.description }}
+    name: Julia ${{ matrix.description }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {version: '1.7',     description: 'stable' }
+          - {version: '1.8',     description: 'stable' }
           - {version: 'nightly', description: 'nightly'}
     steps:
       - uses: actions/checkout@v4

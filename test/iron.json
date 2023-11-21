@@ -26,6 +26,9 @@
                     0
                 ],
                 "pseudopotential": "../Fe.upf",
+                "pseudopotential_kwargs": {
+                    "rcut": 10
+                },
                 "magnetic_moment": 4
             }
         ]

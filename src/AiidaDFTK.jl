@@ -35,10 +35,10 @@ function build_system(data)
     atoms = map(data["periodic_system"]["atoms"]) do atom
         symbol   = Symbol(atom["symbol"])
         position = convert(Vector{Float64}, atom["position"]) * u"bohr"
-        pseudopotential = atom["pseudopotential"]
-        rcut_val = get(atom, "rcut", nothing)
-        magnetic_moment = get(atom, "magnetic_moment", 0.0)
-        Atom(symbol, position; pseudopotential, rcut=rcut_val, magnetic_moment)
+        pseudopotential        = atom["pseudopotential"]
+        pseudopotential_kwargs = parse_kwargs(get(atom, "pseudopotential_kwargs", Dict()))
+        magnetic_moment = convert(Float64, get(atom, "magnetic_moment", 0.0))
+        Atom(symbol, position; pseudopotential, pseudopotential_kwargs, magnetic_moment)
     end
 
     bounding_box = convert(Vector{Vector{Float64}},
