@@ -215,7 +215,7 @@ function run()
         @warn("Found ~/.julia in Julia depot path. " *
               "Ensure that you properly specify JULIA_DEPOT_PATH.")
     end
-    run_json(only(ARGS); extra_output_files=[logfile])
+    run_json(inputfile; extra_output_files=[logfile])
 end
 
 end
