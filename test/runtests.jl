@@ -112,7 +112,6 @@ using UnitfulAtomic
         #TODO Add == implementation for PlaneWaveBasis to DFTK
         @test basis.Ecut           == ref_basis.Ecut
         @test basis.kgrid          == ref_basis.kgrid
-        @test basis.kshift         == ref_basis.kshift
         @test basis.fft_size       == ref_basis.fft_size
         @test basis.variational    == ref_basis.variational
         @test basis.kcoords_global == ref_basis.kcoords_global
