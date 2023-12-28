@@ -195,13 +195,11 @@ using UnitfulAtomic
                     end
                 end
 
-                @test isfile("scfres.jld2")
+                @test isfile(joinpath(dir, "scfres.jld2"))
                 let scfres = load_scfres(joinpath(dir, "scfres.jld2"))
                     @test scfres.converged
                     @test abs(scfres.energies.total - ref_energy) < 1e-2
-                    if bands
-                        @test haskey(scfres, :ψ)
-                    end
+                    bands && @test haskey(scfres, :ψ)
                 end
 
                 # Check the self_consistent_field.json has all expected keys

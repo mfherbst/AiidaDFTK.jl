@@ -68,9 +68,8 @@ function run_self_consistent_field(data, system, basis)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
-    if get(data["scf"], "save_ψ", false)
-        save_scfres(checkpointfile, scfres; save_ψ=true, save_ρ=true)
-    end
+    save_ψ = get(data["scf"], "save_ψ", false)
+    save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
     (; scfres, output_files)
 end
 
