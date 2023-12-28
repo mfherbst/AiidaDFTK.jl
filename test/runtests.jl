@@ -112,7 +112,6 @@ using UnitfulAtomic
         #TODO Add == implementation for PlaneWaveBasis to DFTK
         @test basis.Ecut           == ref_basis.Ecut
         @test basis.kgrid          == ref_basis.kgrid
-        @test basis.kshift         == ref_basis.kshift
         @test basis.fft_size       == ref_basis.fft_size
         @test basis.variational    == ref_basis.variational
         @test basis.kcoords_global == ref_basis.kcoords_global
@@ -183,7 +182,7 @@ using UnitfulAtomic
     @testset "Functionality test run_json" begin
         using AiidaDFTK
 
-        function run_functionality_test(inputfile, ref_energy; slim=true)
+        function run_functionality_test(inputfile, ref_energy; bands=false)
             @testset "$inputfile" begin
             # We need to do this below @__DIR__ because the iron.json contains relative paths
             mktempdir(@__DIR__) do dir
@@ -195,14 +194,11 @@ using UnitfulAtomic
                     end
                 end
 
-                if slim
-                    @test !isfile("scfres.jld2")
-                else
-                    # Check SCF converged to the right spot
-                    let scfres = load_scfres(joinpath(dir, "scfres.jld2"))
-                        @test scfres.converged
-                        @test abs(scfres.energies.total - ref_energy) < 1e-2
-                    end
+                @test isfile(joinpath(dir, "scfres.jld2"))
+                let scfres = load_scfres(joinpath(dir, "scfres.jld2"))
+                    @test scfres.converged
+                    @test abs(scfres.energies.total - ref_energy) < 1e-2
+                    bands && @test haskey(scfres, :ψ)
                 end
 
                 # Check the self_consistent_field.json has all expected keys
@@ -219,6 +215,6 @@ using UnitfulAtomic
         end
 
         run_functionality_test("iron.json",         -117.153287)
-        run_functionality_test("silicon_slim.json", -7.8380925)
+        run_functionality_test("silicon_bands.json", -7.8380925; bands=true)
     end
 end

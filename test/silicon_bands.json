@@ -64,7 +64,7 @@
     "scf": {
         "$function": "self_consistent_field",
         "checkpointfile": "scfres.jld2",
-        "store_slim": true,
+        "save_ψ": true,
         "$kwargs": {
             "mixing": {
                  "$symbol": "KerkerDosMixing"

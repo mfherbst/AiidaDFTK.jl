@@ -57,43 +57,19 @@ function run_geometry_optimisation(data, system, basis)
     error("not implemented yet")
 end
 
-function save_slim_json(filename, scfres)
-    if mpi_master()
-        data = Dict{String,Any}("energies" => DFTK.todict(scfres.energies))
-        for key in (:converged, :εF, :n_iter)
-            data[string(key)] = getproperty(scfres, key)
-        end
-        open(filename, "w") do io
-            JSON3.pretty(io, data)
-        end
-    end
-end
-
 function run_self_consistent_field(data, system, basis)
-    checkpointfile = data["scf"]["checkpointfile"]
-    if isfile(checkpointfile)
-        (; ρ, ψ) = load_scfres(checkpointfile)
-    else
-        ψ = nothing
-        ρ = guess_density(basis, system)
-    end
-
-    # TODO there is a way to write periodic checkpoints ...
-
     interpolations = Dict("basis" => basis, "model" => basis.model)
     kwargs = parse_kwargs(data["scf"]["\$kwargs"]; interpolations)
-    scfres = self_consistent_field(basis; ρ, ψ, kwargs...)
 
-    store_slim = get(data["scf"], "store_slim", mpi_nprocs() > 1)
-    if store_slim  # TODO All this is a dirty hack for now ...
-        save_slim_json("self_consistent_field.json", scfres)
-        output_files = ["self_consistent_field.json"]
+    ρ = guess_density(basis, system)
+    checkpointfile = data["scf"]["checkpointfile"]
+    checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
+    scfres = self_consistent_field(basis; checkpointargs..., kwargs...)
 
-    else
-        save_scfres(checkpointfile, scfres);
-        save_scfres("self_consistent_field.json", scfres)
-        output_files = [checkpointfile, "self_consistent_field.json"]
-    end
+    output_files = [checkpointfile, "self_consistent_field.json"]
+    save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
+    save_ψ = get(data["scf"], "save_ψ", false)
+    save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
     (; scfres, output_files)
 end
 
