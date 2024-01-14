@@ -5,7 +5,19 @@
 [![Build Status](https://github.com/mfherbst/AiidaDFTK.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/mfherbst/AiidaDFTK.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/mfherbst/AiidaDFTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/mfherbst/AiidaDFTK.jl)
 
-Julia-side implementation of the Aiida plugin of [DFTK](https://dftk.org).
+Julia-side implementation of the [Aiida](https://aiida.net)
+plugin of [DFTK](https://dftk.org).
+For more information how to setup and use DFTK with Aiida,
+see the [documentation of the python side](https://github.com/aiidaplugins/aiida-dftk)
+of the plugin.
 
-Enables running a DFTK calculation from a JSON file,
-such that all computed results are again available in JSON or HDF5 for programmatic parsing.
+This package implements a `run` function, which parses a JSON input
+to trigger a DFTK-based calculation.
+Results are again dumped in a JSON/HDF5-compatible form
+and can be easily parsing in downstream scripts.
+
+At the moment there are no guarantees in the input / output format
+except that it works in combination with the `aiida-dftk` plugin.
+If you wish to use the pipeline implemented by this package
+in combination with a different downstream driver,
+please feel free to contact us.
