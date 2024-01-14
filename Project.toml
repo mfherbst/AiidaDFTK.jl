@@ -20,16 +20,16 @@ UnitfulAtomic = "a7773ee8-282e-5fa2-be4e-bd808c38a91a"
 
 [compat]
 AtomsBase = "0.3"
-DFTK = "0.6.13"
+DFTK = "0.6.16"
 DocStringExtensions = "0.9"
-HDF5 = "0.16, 0.17"
+HDF5 = "0.17"
 JLD2 = "0.4"
 JSON3 = "1"
 MPI = "0.20"
 TimerOutputs = "0.5"
 Unitful = "1"
 UnitfulAtomic = "1"
-julia = "1.8"
+julia = "1.9"
 
 [extras]
 AtomsBaseTesting = "ed7c10db-df7e-4efa-a7be-4f4190f7f227"
