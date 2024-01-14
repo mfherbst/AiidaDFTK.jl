@@ -15,13 +15,17 @@ Useful information might also be available in the DFTK-specific guides for
 and [Using DFTK on compute clusters](https://docs.dftk.org/stable/tricks/compute_clusters/).
 
 ## Functionality
-This package effectively implements a pipeline where appropriate
-JSON-input triggers a DFTK calculation,
-which is in turn dumped in a JSON/HDF5 output form.
-At the moment we give no guaranteed except that it works in the context
-of the `aiida-dftk` plugin.
-If you wish to use such an IO pipeline in combination with a different package,
+This package implements a `run` function, which parses a JSON input
+to trigger a DFTK-based calculation.
+Results are again dumped in a JSON/HDF5-compatible form
+and can be easily parsing in downstream scripts.
+
+At the moment there are no guarantees in the input / output format
+except that it works in combination with the `aiida-dftk` plugin.
+If you wish to use the pipeline implemented by this package
+in combination with a different downstream driver,
 please feel free to contact us.
+
 Some general (and not necessarily up to date) remarks
 on the input and output formats are given in [Input and Output format](@ref).
 
