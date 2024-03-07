@@ -90,7 +90,21 @@ function run_postscf(data, scfres)
     for calc in postscf_calcs
         funcname = calc["\$function"]
         kwargs   = parse_kwargs(get(calc, "\$kwargs", Dict()))
-        results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
+
+        if funcname == "compute_bands"
+            kpath = pop!(kwargs, :kpath, nothing)
+            print(kpath)
+            if kpath !== nothing
+                kpath = convert(Vector{Vector{Float64}}, kpath)
+            else
+                error("kpath is not provided for compute_bands")
+            end
+            kpath = ExplicitKpoints(kpath)
+            bands = getproperty(DFTK, Symbol(funcname))(scfres, kpath; kwargs...)
+            results = (kpath=kpath.kcoords,eigenvalues=bands.eigenvalues,occupation=bands.occupation)
+        else
+            results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
+        end
 
         store_hdf5(funcname * ".hdf5", (; funcname, results))
         push!(output_files, funcname * ".hdf5")
