@@ -45,22 +45,24 @@
     },
     "basis_kwargs": {
         "kgrid": [
-            2,
-            2,
-            2
+            6,
+            6,
+            6
         ],
-        "Ecut": 10
+        "Ecut": 20
     },
     "scf": {
         "$function": "self_consistent_field",
         "checkpointfile": "scfres.jld2",
+        "save_ψ": true,
+        "maxtime": 1,
         "$kwargs": {
             "mixing": {
                  "$symbol": "KerkerDosMixing"
             },
             "is_converged": {
                  "$symbol": "ScfConvergenceEnergy",
-                 "$args": 1.0e-4
+                 "$args": 1.0e-8
             }
         }
     },

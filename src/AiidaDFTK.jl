@@ -11,6 +11,7 @@ using MPI
 using Unitful
 using UnitfulAtomic
 using Pkg
+using Dates
 
 export run_json
 
@@ -64,7 +65,9 @@ function run_self_consistent_field(data, system, basis)
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
-    scfres = self_consistent_field(basis; checkpointargs..., kwargs...)
+    maxtime = get(data["scf"], "maxtime", nothing)
+    maxtime = maxtime !== nothing ? Second(maxtime) : Year(1)
+    scfres = self_consistent_field(basis; checkpointargs..., kwargs..., maxtime)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
@@ -93,7 +96,6 @@ function run_postscf(data, scfres)
 
         if funcname == "compute_bands"
             kpath = pop!(kwargs, :kpath, nothing)
-            print(kpath)
             if kpath !== nothing
                 kpath = convert(Vector{Vector{Float64}}, kpath)
             else
