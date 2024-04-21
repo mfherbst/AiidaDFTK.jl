@@ -55,14 +55,14 @@
         "$function": "self_consistent_field",
         "checkpointfile": "scfres.jld2",
         "save_ψ": true,
-        "maxtime": 1,
+        "maxtime": 3000,
         "$kwargs": {
             "mixing": {
                  "$symbol": "KerkerDosMixing"
             },
             "is_converged": {
                  "$symbol": "ScfConvergenceEnergy",
-                 "$args": 1.0e-8
+                 "$args": 1.0e-1
             }
         }
     },

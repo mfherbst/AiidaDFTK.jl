@@ -70,9 +70,9 @@ function run_self_consistent_field(data, system, basis)
     scfres = self_consistent_field(basis; checkpointargs..., kwargs..., maxtime)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
-    save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
     save_ψ = get(data["scf"], "save_ψ", false)
     save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
+    save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false) #output json after jld2, facilitating checking if checkpoint saved correctly
     (; scfres, output_files)
 end
 
@@ -162,9 +162,14 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     (; scfres, output_files) = run_scf(data, system, basis)
     append!(all_output_files, output_files)
 
-    # Run Post SCF routines
-    (; output_files) = run_postscf(data, scfres)
-    append!(all_output_files, output_files)
+    # Run Post SCF routines only after SCF converged
+    if isfile("self_consistent_field.json")
+        scf_json = JSON3.read(read("self_consistent_field.json", String))
+        if get(scf_json, "converged", false)
+            (; output_files) = run_postscf(data, scfres)
+            append!(all_output_files, output_files)
+        end
+    end
 
     # Dump timings
     timingfile = "timings.json"
