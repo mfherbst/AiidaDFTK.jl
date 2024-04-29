@@ -25,7 +25,7 @@
                     0,
                     0
                 ],
-                "pseudopotential": "/home/max/Desktop/Aiida_DFTK_Test/AiidaDFTK/AiidaDFTK.jl/test/Fe.upf",
+                "pseudopotential": "../Fe.upf",
                 "pseudopotential_kwargs": {
                     "rcut": 10
                 },
