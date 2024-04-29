@@ -103,13 +103,13 @@ function run_postscf(data, scfres)
             end
             kpath = ExplicitKpoints(kpath)
             bands = getproperty(DFTK, Symbol(funcname))(scfres, kpath; kwargs...)
-            results = (kpath=kpath.kcoords,eigenvalues=bands.eigenvalues,occupation=bands.occupation)
+            save_bands("compute_bands.json", bands)
+            push!(output_files, "compute_bands.json")
         else
             results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
+            store_hdf5(funcname * ".hdf5", (; funcname, results))
+            push!(output_files, funcname * ".hdf5")
         end
-
-        store_hdf5(funcname * ".hdf5", (; funcname, results))
-        push!(output_files, funcname * ".hdf5")
     end
     (; output_files)
 end
