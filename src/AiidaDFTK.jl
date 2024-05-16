@@ -11,6 +11,7 @@ using MPI
 using Unitful
 using UnitfulAtomic
 using Pkg
+using Dates
 
 export run_json
 
@@ -64,12 +65,14 @@ function run_self_consistent_field(data, system, basis)
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
-    scfres = self_consistent_field(basis; checkpointargs..., kwargs...)
+    maxtime = get(data["scf"], "maxtime", nothing)
+    maxtime = maxtime !== nothing ? Second(maxtime) : Year(1)
+    scfres = self_consistent_field(basis; checkpointargs..., kwargs..., maxtime)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
-    save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
     save_ψ = get(data["scf"], "save_ψ", false)
     save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
+    save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false) #output json after jld2, facilitating checking if checkpoint saved correctly
     (; scfres, output_files)
 end
 
@@ -90,10 +93,23 @@ function run_postscf(data, scfres)
     for calc in postscf_calcs
         funcname = calc["\$function"]
         kwargs   = parse_kwargs(get(calc, "\$kwargs", Dict()))
-        results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
 
-        store_hdf5(funcname * ".hdf5", (; funcname, results))
-        push!(output_files, funcname * ".hdf5")
+        if funcname == "compute_bands"
+            kpath = pop!(kwargs, :kpath, nothing)
+            if kpath !== nothing
+                kpath = convert(Vector{Vector{Float64}}, kpath)
+            else
+                error("kpath is not provided for compute_bands")
+            end
+            kpath = ExplicitKpoints(kpath)
+            bands = getproperty(DFTK, Symbol(funcname))(scfres, kpath; kwargs...)
+            save_bands("compute_bands.json", bands)
+            push!(output_files, "compute_bands.json")
+        else
+            results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
+            store_hdf5(funcname * ".hdf5", (; funcname, results))
+            push!(output_files, funcname * ".hdf5")
+        end
     end
     (; output_files)
 end
@@ -146,9 +162,14 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     (; scfres, output_files) = run_scf(data, system, basis)
     append!(all_output_files, output_files)
 
-    # Run Post SCF routines
-    (; output_files) = run_postscf(data, scfres)
-    append!(all_output_files, output_files)
+    # Run Post SCF routines only after SCF converged
+    if isfile("self_consistent_field.json")
+        scf_json = JSON3.read(read("self_consistent_field.json", String))
+        if get(scf_json, "converged", false)
+            (; output_files) = run_postscf(data, scfres)
+            append!(all_output_files, output_files)
+        end
+    end
 
     # Dump timings
     timingfile = "timings.json"
