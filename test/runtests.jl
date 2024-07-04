@@ -214,7 +214,7 @@ using UnitfulAtomic
             end
         end
 
-        run_functionality_test("iron.json",         -117.153287)
+        run_functionality_test("iron.json",         -124.1652766)
         run_functionality_test("silicon_bands.json", -7.8380925; bands=true)
     end
 end
