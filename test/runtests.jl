@@ -88,7 +88,7 @@ using UnitfulAtomic
     @testset "build_basis silicon" begin
         smearing = Dict("\$symbol" => "Smearing.MethfesselPaxton", "\$args" => [1])
         data = Dict(
-            "model_kwargs" => Dict("xc" => [":lda_x", ":lda_c_pw"],
+            "model_kwargs" => Dict("functionals" => [":lda_x", ":lda_c_pw"],
                                    "temperature" => 1e-3,
                                    "smearing" => smearing),
             "basis_kwargs" => Dict("kgrid" => [4, 4, 4], "Ecut" => 15),
@@ -124,7 +124,7 @@ using UnitfulAtomic
 
         smearing = Dict("\$symbol" => "Smearing.MarzariVanderbilt")
         data = Dict(
-            "model_kwargs" => Dict("xc" => [":gga_x_pbe", ":gga_c_pbe"],
+            "model_kwargs" => Dict("functionals" => [":gga_x_pbe", ":gga_c_pbe"],
                                    "temperature" => 1e-2,
                                    "smearing" => smearing),
             "basis_kwargs" => Dict("kgrid" => [4, 4, 4], "Ecut" => 15),

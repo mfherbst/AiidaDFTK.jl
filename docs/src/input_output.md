@@ -30,6 +30,10 @@ such that some special processing is available:
   by constructing a `Smearing.Gaussian()` object.
 - The special strings `$basis` and `$model` will be replaced by the results
   to the calls to `DFTK.PlaneWaveBasis` and `DFTK.model_DFT`, respectively.
+For the `functionals` key (Exchange-correlation functional) all keys supported
+by `model_DFT`,
+(that is the keys of [Libxc](https://www.tddft.org/programs/libxc/functionals/),
+are available.
 
 The dict key `scf` specifies the SCF options. With the `$function` key
 set to `self_consistent_field` a one-shot SCF is run.
@@ -40,6 +44,11 @@ such that above special processing is available.
 In the `iron.json` example this is used to construct a `DFTK.ScfConvergenceEnergy`
 object, setting the convergence tolerance to `1e-4` in the energy
 and to switch the mixing to `DFTK.KerkerDosMixing`.
+
+Finally the dict key `postscf` lists functions to run after the SCF has been converged.
+This includes
+- `compute_forces_cart`: Computation of Cartesian forces
+- `compute_stresses_cart`: Computation of Cartesian stresses.
 
 ## Output files
 After the SCF has been run,

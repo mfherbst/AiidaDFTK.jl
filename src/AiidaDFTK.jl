@@ -11,6 +11,7 @@ using MPI
 using Unitful
 using UnitfulAtomic
 using Pkg
+using PrecompileTools
 
 export run_json
 
@@ -48,8 +49,7 @@ end
 
 function build_basis(data, system)
     model_kwargs = parse_kwargs(data["model_kwargs"])
-    xc = pop!(model_kwargs, :xc)
-    model = model_DFT(system, xc; model_kwargs...)
+    model = model_DFT(system; model_kwargs...)
     PlaneWaveBasis(model; parse_kwargs(data["basis_kwargs"])...)
 end
 
@@ -175,7 +175,7 @@ julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 
 It automatically dumps a logfile `file.log` (i.e. basename of the input file
 with the log extension), which contains the log messages (i.e. @info, @warn, ...).
-Currently stdout  and stderr is still printed.
+Currently stdout and stderr are still printed.
 """
 function run()
     # TODO Json logger ?
@@ -194,4 +194,22 @@ function run()
     run_json(inputfile; extra_output_files=[logfile])
 end
 
+
+# Precompilation block with a basic workflow
+@setup_workload begin
+    inputfile = joinpath(@__DIR__, "..", "test", "silicon_bands.json")
+
+    if !PrecompileTools.verbose[]
+        # In verbose precompile mode also show the output here
+        global_logger(NullLogger())
+    end
+
+    mktempdir() do tmpdir
+        cd(tmpdir) do
+            @compile_workload begin
+                run_json(inputfile)
+            end
+        end
+    end
 end
+end  # module AiidaDFTK
