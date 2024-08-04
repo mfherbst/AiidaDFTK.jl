@@ -1,17 +1,18 @@
 module AiidaDFTK
-using Logging
 using AtomsBase
+using Dates
 using DFTK
 using DocStringExtensions
 using InteractiveUtils
 using JLD2
 using JSON3
-using TimerOutputs
+using Logging
 using MPI
-using Unitful
-using UnitfulAtomic
 using Pkg
 using PrecompileTools
+using TimerOutputs
+using Unitful
+using UnitfulAtomic
 
 export run_json
 
@@ -61,10 +62,12 @@ function run_self_consistent_field(data, system, basis)
     interpolations = Dict("basis" => basis, "model" => basis.model)
     kwargs = parse_kwargs(data["scf"]["\$kwargs"]; interpolations)
 
+
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
-    scfres = self_consistent_field(basis; checkpointargs..., kwargs...)
+    runtimeargs    = (; maxtime=Seconds(get(data["scf"], "maxtime", 60*60*24*366)))
+    scfres = self_consistent_field(basis; checkpointargs..., runtimeargs..., kwargs...)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
@@ -146,9 +149,11 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     (; scfres, output_files) = run_scf(data, system, basis)
     append!(all_output_files, output_files)
 
-    # Run Post SCF routines
-    (; output_files) = run_postscf(data, scfres)
-    append!(all_output_files, output_files)
+    # Run Post SCF routines, but only if SCF converged
+    if scfres.converged
+        (; output_files) = run_postscf(data, scfres)
+        append!(all_output_files, output_files)
+    end
 
     # Dump timings
     timingfile = "timings.json"
