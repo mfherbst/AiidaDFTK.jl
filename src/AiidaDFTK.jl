@@ -49,9 +49,8 @@ function build_system(data)
 end
 
 function build_basis(data, system)
-    model_kwargs = parse_kwargs(data["model_kwargs"])
-    model = model_DFT(system; model_kwargs...)
-    PlaneWaveBasis(model; parse_kwargs(data["basis_kwargs"])...)
+    model = model_DFT(system; parse_kwargs(data["model_kwargs"])...)
+    PlaneWaveBasis(model;     parse_kwargs(data["basis_kwargs"])...)
 end
 
 function run_geometry_optimisation(data, system, basis)
