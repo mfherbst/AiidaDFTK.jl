@@ -1,16 +1,18 @@
 module AiidaDFTK
-using Logging
 using AtomsBase
+using Dates
 using DFTK
 using DocStringExtensions
 using InteractiveUtils
 using JLD2
 using JSON3
-using TimerOutputs
+using Logging
 using MPI
+using Pkg
+using PrecompileTools
+using TimerOutputs
 using Unitful
 using UnitfulAtomic
-using Pkg
 
 export run_json
 
@@ -47,10 +49,8 @@ function build_system(data)
 end
 
 function build_basis(data, system)
-    model_kwargs = parse_kwargs(data["model_kwargs"])
-    xc = pop!(model_kwargs, :xc)
-    model = model_DFT(system, xc; model_kwargs...)
-    PlaneWaveBasis(model; parse_kwargs(data["basis_kwargs"])...)
+    model = model_DFT(system; parse_kwargs(data["model_kwargs"])...)
+    PlaneWaveBasis(model;     parse_kwargs(data["basis_kwargs"])...)
 end
 
 function run_geometry_optimisation(data, system, basis)
@@ -61,10 +61,12 @@ function run_self_consistent_field(data, system, basis)
     interpolations = Dict("basis" => basis, "model" => basis.model)
     kwargs = parse_kwargs(data["scf"]["\$kwargs"]; interpolations)
 
+
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
-    scfres = self_consistent_field(basis; checkpointargs..., kwargs...)
+    runtimeargs    = (; maxtime=Second(get(data["scf"], "maxtime", 60*60*24*366)))
+    scfres = self_consistent_field(basis; checkpointargs..., runtimeargs..., kwargs...)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
@@ -146,9 +148,11 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     (; scfres, output_files) = run_scf(data, system, basis)
     append!(all_output_files, output_files)
 
-    # Run Post SCF routines
-    (; output_files) = run_postscf(data, scfres)
-    append!(all_output_files, output_files)
+    # Run Post SCF routines, but only if SCF converged
+    if scfres.converged
+        (; output_files) = run_postscf(data, scfres)
+        append!(all_output_files, output_files)
+    end
 
     # Dump timings
     timingfile = "timings.json"
@@ -175,7 +179,7 @@ julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 
 It automatically dumps a logfile `file.log` (i.e. basename of the input file
 with the log extension), which contains the log messages (i.e. @info, @warn, ...).
-Currently stdout  and stderr is still printed.
+Currently stdout and stderr are still printed.
 """
 function run()
     # TODO Json logger ?
@@ -194,4 +198,22 @@ function run()
     run_json(inputfile; extra_output_files=[logfile])
 end
 
+
+# Precompilation block with a basic workflow
+@setup_workload begin
+    inputfile = joinpath(@__DIR__, "..", "test", "silicon_bands.json")
+
+    if !PrecompileTools.verbose[]
+        # In verbose precompile mode also show the output here
+        global_logger(NullLogger())
+    end
+
+    mktempdir() do tmpdir
+        cd(tmpdir) do
+            @compile_workload begin
+                run_json(inputfile)
+            end
+        end
+    end
 end
+end  # module AiidaDFTK

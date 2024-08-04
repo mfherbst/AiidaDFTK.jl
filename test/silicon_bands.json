@@ -39,7 +39,7 @@
         ]
     },
     "model_kwargs": {
-        "xc": [
+        "functionals": [
             ":lda_x",
             ":lda_c_pw"
         ],

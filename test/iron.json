@@ -34,7 +34,7 @@
         ]
     },
     "model_kwargs": {
-        "xc": [
+        "functionals": [
             ":gga_x_pbe",
             ":gga_c_pbe"
         ],
