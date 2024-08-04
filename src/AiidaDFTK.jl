@@ -61,7 +61,6 @@ function run_self_consistent_field(data, system, basis)
     interpolations = Dict("basis" => basis, "model" => basis.model)
     kwargs = parse_kwargs(data["scf"]["\$kwargs"]; interpolations)
 
-
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
