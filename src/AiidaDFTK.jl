@@ -66,7 +66,7 @@ function run_self_consistent_field(data, system, basis)
     ρ = guess_density(basis, system)
     checkpointfile = data["scf"]["checkpointfile"]
     checkpointargs = kwargs_scf_checkpoints(basis; filename=checkpointfile, ρ)
-    runtimeargs    = (; maxtime=Seconds(get(data["scf"], "maxtime", 60*60*24*366)))
+    runtimeargs    = (; maxtime=Second(get(data["scf"], "maxtime", 60*60*24*366)))
     scfres = self_consistent_field(basis; checkpointargs..., runtimeargs..., kwargs...)
 
     output_files = [checkpointfile, "self_consistent_field.json"]
