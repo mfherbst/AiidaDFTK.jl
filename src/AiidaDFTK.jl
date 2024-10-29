@@ -200,7 +200,11 @@ end
 
 # Precompilation block with a basic workflow
 @setup_workload begin
-    inputfile = joinpath(@__DIR__, "..", "test", "silicon_bands.json")
+    # Run a sample silicon input.
+    # We don't run any postscf derivative computation in the precompilation workload
+    # because of a bad interaction between ForwardDiff and the compilation cache:
+    # https://github.com/JuliaDiff/ForwardDiff.jl/issues/714
+    inputfile = joinpath(@__DIR__, "..", "precompilation_task.json")
 
     if !PrecompileTools.verbose[]
         # In verbose precompile mode also show the output here
