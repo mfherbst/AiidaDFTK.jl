@@ -128,9 +128,14 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     # Threading setup ... maybe later need to take parameters
     # from the JSON into account
     if mpi_nprocs() > 1
-        disable_threading()
-    else
-        setup_threading()
+        DFTK.setup_threading(; n_blas=1, n_fft=1)
+        # Don't modify DFTK threads automatically.
+        # They are controlled by a preference, changing it can trigger a recompilation!
+        # The best we can do is warn the user.
+        if DFTK.get_DFTK_threads() > 1
+            @warn("Running through MPI, but threading was not disabled!"
+                + " DFTK threads: $(DFTK.get_DFTK_threads()).")
+        end
     end
 
     DFTK.reset_timer!(DFTK.timer)
