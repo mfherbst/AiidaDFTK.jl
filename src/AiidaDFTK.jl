@@ -177,17 +177,11 @@ function is expected to be called from queuing system jobscripts, for example:
 ```bash
 julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 ```
-
-It automatically dumps a logfile `file.log` (i.e. basename of the input file
-with the log extension), which contains the log messages (i.e. @info, @warn, ...).
-Currently stdout and stderr are still printed.
 """
 function run()
-    # TODO Json logger ?
     inputfile = only(ARGS)
-    logfile   = first(splitext(basename(inputfile))) * ".log"
     if mpi_master()
-        global_logger(SimpleLogger(open(logfile, "w")))
+        # Default logging to stdout
     else
         global_logger(NullLogger())
     end
@@ -196,7 +190,7 @@ function run()
         @warn("Found ~/.julia in Julia depot path. " *
               "Ensure that you properly specify JULIA_DEPOT_PATH.")
     end
-    run_json(inputfile; extra_output_files=[logfile])
+    run_json(inputfile)
 end
 
 
