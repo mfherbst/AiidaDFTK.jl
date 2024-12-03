@@ -9,7 +9,7 @@ If you wish to use the same IO pipeline in combination with a different package,
 please feel free to get in touch with us.
 
 ## JSON input
-We follow the file [iron.json](https://github.com/mfherbst/AiidaDFTK.jl/raw/master/test/iron.json) as an example.
+We follow the file [iron.json](https://github.com/epfl-matmat/AiidaDFTK.jl/raw/master/test/iron.json) as an example.
 All units are atomic units.
 
 The dict key `periodic_system` contains the structure:
