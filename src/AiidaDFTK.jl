@@ -9,6 +9,7 @@ using JSON3
 using Logging
 using MPI
 using Pkg
+using PkgVersion
 using PrecompileTools
 using TimerOutputs
 using Unitful
@@ -101,7 +102,36 @@ Run a DFTK calculation from a json input file.
 Output is by default written to `stdout` and `stderr`.
 The list of generated output files is returned.
 """
-function run_json(filename::AbstractString; extra_output_files=String[])
+function run_json(filename::AbstractString; extra_output_files=String[], min_version=typemin(VersionNumber), max_version=typemax(VersionNumber))
+    # We write a few key messages to an error file that we can parse from
+    # the AiiDA plugin to detect common failure modes.
+    errorfile = "errors.log"
+    if isfile(errorfile)
+        error("Error file $errorfile already exists!")
+    end
+    push!(extra_output_files, errorfile)
+    function report_error(msg)
+        mpi_master() || return
+        open(errorfile, "a") do io
+            println(io, msg)
+            flush(io)
+        end
+        println(msg) # also print to stdout
+    end
+    function fatal_error(msg)
+        report_error(msg)
+        error(msg)
+    end
+
+    report_error("Imports succeeded -- This indicates that AiidaDFTK was installed correctly and that the MPI environment is likely correct.")
+
+    version = PkgVersion.@Version
+    if min_version <= version && version < max_version
+        report_error("Package version matches requirements -- Expected AiidaDFTK version ∈ [$min_version, $max_version). Actual: $(version).")
+    else
+        fatal_error("Package version mismatch -- Expected AiidaDFTK version ∈ [$min_version, $max_version). Actual: $(version).")
+    end
+
     all_output_files = copy(extra_output_files)
 
     if mpi_master()
@@ -162,20 +192,22 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     end
     push!(all_output_files, timingfile)
 
+    report_error("Finished successfully.")
+
     (; output_files=all_output_files)
 end
 
 
 """
 Run a DFTK calculation from a json input file. The input file name is expected to be passed
-as the first argument when calling Julia (i.e. it should be available via `ARGS`. This
+as the first argument when calling Julia (i.e. it should be available via `ARGS`). This
 function is expected to be called from queuing system jobscripts, for example:
 
 ```bash
 julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 ```
 """
-function run()
+function run(; kwargs...)
     inputfile = only(ARGS)
     if mpi_master()
         # Default logging to stdout
@@ -187,7 +219,7 @@ function run()
         @warn("Found ~/.julia in Julia depot path. " *
               "Ensure that you properly specify JULIA_DEPOT_PATH.")
     end
-    run_json(inputfile)
+    run_json(inputfile; kwargs...)
 end
 
 

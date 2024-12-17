@@ -210,6 +210,11 @@ using UnitfulAtomic
 
                     # TODO Put tests for all keys here, which are read by Aiida
                 end
+
+                open(joinpath(dir, "errors.log")) do io
+                    errors = read(io, String)
+                    @test occursin("Finished successfully", errors)
+                end
             end
             end
         end
