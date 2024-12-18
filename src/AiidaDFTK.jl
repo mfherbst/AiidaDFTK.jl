@@ -24,6 +24,7 @@ $(TYPEDSIGNATURES)
 $(DOCSTRING)
 """
 
+include("errors.jl")
 include("parse_kwargs.jl")
 include("store_hdf5.jl")
 
@@ -103,33 +104,21 @@ Output is by default written to `stdout` and `stderr`.
 The list of generated output files is returned.
 """
 function run_json(filename::AbstractString; extra_output_files=String[], min_version=typemin(VersionNumber), max_version=typemax(VersionNumber))
-    # We write a few key messages to an error file that we can parse from
-    # the AiiDA plugin to detect common failure modes.
-    errorfile = "errors.log"
-    if isfile(errorfile)
-        error("Error file $errorfile already exists!")
-    end
-    push!(extra_output_files, errorfile)
-    function report_error(msg)
-        mpi_master() || return
-        open(errorfile, "a") do io
-            println(io, msg)
-            flush(io)
-        end
-        println(msg) # also print to stdout
-    end
-    function fatal_error(msg)
-        report_error(msg)
-        error(msg)
-    end
+    push!(extra_output_files, ERRORFILE)
 
-    report_error("Imports succeeded -- This indicates that AiidaDFTK was installed correctly and that the MPI environment is likely correct.")
+    report_error("$ERR_IMPORTS_SUCEEDED --"
+        * " This indicates that AiidaDFTK was installed correctly"
+        * " and that the MPI environment is likely correct.")
 
     version = PkgVersion.@Version
     if min_version <= version && version < max_version
-        report_error("Package version matches requirements -- Expected AiidaDFTK version ∈ [$min_version, $max_version). Actual: $(version).")
+        report_error("$ERR_VERSION_OK --"
+            * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
+            * " Actual: $(version).")
     else
-        fatal_error("Package version mismatch -- Expected AiidaDFTK version ∈ [$min_version, $max_version). Actual: $(version).")
+        fatal_error("$ERR_VERSION_MISMATCH --"
+            * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
+            * " Actual: $(version).")
     end
 
     all_output_files = copy(extra_output_files)
@@ -192,7 +181,7 @@ function run_json(filename::AbstractString; extra_output_files=String[], min_ver
     end
     push!(all_output_files, timingfile)
 
-    report_error("Finished successfully.")
+    report_error("$ERR_FINISHED_SUCCESSFULLY.")
 
     (; output_files=all_output_files)
 end
@@ -218,6 +207,9 @@ function run(; kwargs...)
     if expanduser("~/.julia") in Pkg.depots()
         @warn("Found ~/.julia in Julia depot path. " *
               "Ensure that you properly specify JULIA_DEPOT_PATH.")
+    end
+    if isfile(ERRORFILE)
+        error("Error file $ERRORFILE already exists!")
     end
     run_json(inputfile; kwargs...)
 end
