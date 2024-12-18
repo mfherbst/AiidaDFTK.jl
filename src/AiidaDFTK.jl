@@ -7,14 +7,13 @@ using InteractiveUtils
 using JLD2
 using JSON3
 using Logging
+using LoggingExtras
 using MPI
 using Pkg
 using PrecompileTools
 using TimerOutputs
 using Unitful
 using UnitfulAtomic
-
-export run_json
 
 @template METHODS =
 """
@@ -23,7 +22,7 @@ $(TYPEDSIGNATURES)
 $(DOCSTRING)
 """
 
-include("errors.jl")
+include("logging.jl")
 include("parse_kwargs.jl")
 include("store_hdf5.jl")
 
@@ -103,21 +102,21 @@ Output is by default written to `stdout` and `stderr`.
 The list of generated output files is returned.
 """
 function run_json(filename::AbstractString; extra_output_files=String[], min_version=typemin(VersionNumber), max_version=typemax(VersionNumber))
-    push!(extra_output_files, ERRORFILE)
-
-    report_error("$ERR_IMPORTS_SUCEEDED --"
+    @info("$LOG_IMPORTS_SUCEEDED --"
         * " This indicates that AiidaDFTK was installed correctly"
         * " and that the MPI environment is likely correct.")
 
     version = pkgversion(@__MODULE__)
     if min_version <= version && version < max_version
-        report_error("$ERR_VERSION_OK --"
+        @info("$LOG_VERSION_OK --"
             * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
             * " Actual: $(version).")
     else
-        fatal_error("$ERR_VERSION_MISMATCH --"
+        msg = ("$LOG_VERSION_MISMATCH --"
             * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
             * " Actual: $(version).")
+        @error msg
+        error(msg)
     end
 
     all_output_files = copy(extra_output_files)
@@ -180,7 +179,7 @@ function run_json(filename::AbstractString; extra_output_files=String[], min_ver
     end
     push!(all_output_files, timingfile)
 
-    report_error("$ERR_FINISHED_SUCCESSFULLY.")
+    @info "$LOG_FINISHED_SUCCESSFULLY."
 
     (; output_files=all_output_files)
 end
@@ -199,24 +198,25 @@ It automatically dumps a logfile `file.log` (i.e. basename of the input file
 with the log extension), which contains the log messages (i.e. @info, @warn, ...).
 Currently stdout and stderr are still printed.
 """
-function run(; kwargs...)
+function run(inputfile; kwargs...)
     # TODO Json logger ?
-    inputfile = only(ARGS)
-    logfile   = first(splitext(basename(inputfile))) * ".log"
+    logfile = first(splitext(basename(inputfile))) * ".log"
     if mpi_master()
-        global_logger(SimpleLogger(open(logfile, "w")))
+        # Keep logging everything to stderr for manual inspection (AiiDA captures it automatically).
+        # Also route log messages to the log file for automatic parsing in AiiDA.
+        # Unlike SimpleLogger, FileLogger will always flush. It also truncates the file on creation.
+        logger = TeeLogger(current_logger(), FileLogger(logfile))
     else
-        global_logger(NullLogger())
+        logger = NullLogger()
     end
 
-    if expanduser("~/.julia") in Pkg.depots()
-        @warn("Found ~/.julia in Julia depot path. " *
-              "Ensure that you properly specify JULIA_DEPOT_PATH.")
+    with_logger(logger) do
+        if expanduser("~/.julia") in Pkg.depots()
+            @warn("Found ~/.julia in Julia depot path. " *
+                "Ensure that you properly specify JULIA_DEPOT_PATH.")
+        end
+        run_json(inputfile; extra_output_files=[logfile], kwargs...)
     end
-    if isfile(ERRORFILE)
-        error("Error file $ERRORFILE already exists!")
-    end
-    run_json(inputfile; extra_output_files=[logfile], kwargs...)
 end
 
 
