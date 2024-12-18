@@ -3,6 +3,7 @@
 *.jl.mem
 *.swp
 *~
+/LocalPreferences.toml
 /Manifest.toml
 /docs/Manifest.toml
 /docs/build/
