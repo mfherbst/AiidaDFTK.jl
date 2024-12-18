@@ -9,7 +9,6 @@ using JSON3
 using Logging
 using MPI
 using Pkg
-using PkgVersion
 using PrecompileTools
 using TimerOutputs
 using Unitful
@@ -110,7 +109,7 @@ function run_json(filename::AbstractString; extra_output_files=String[], min_ver
         * " This indicates that AiidaDFTK was installed correctly"
         * " and that the MPI environment is likely correct.")
 
-    version = PkgVersion.@Version
+    version = pkgversion(@__MODULE__)
     if min_version <= version && version < max_version
         report_error("$ERR_VERSION_OK --"
             * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
