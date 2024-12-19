@@ -10,6 +10,7 @@ using Logging
 using LoggingExtras
 using MPI
 using Pkg
+using Pkg.Versions
 using PrecompileTools
 using TimerOutputs
 using Unitful
@@ -101,19 +102,20 @@ Run a DFTK calculation from a json input file.
 Output is by default written to `stdout` and `stderr`.
 The list of generated output files is returned.
 """
-function run_json(filename::AbstractString; extra_output_files=String[], min_version=typemin(VersionNumber), max_version=typemax(VersionNumber))
+function run_json(filename::AbstractString; extra_output_files=String[], allowed_versions="*")
     @info("$LOG_IMPORTS_SUCEEDED --"
         * " This indicates that AiidaDFTK was installed correctly"
         * " and that the MPI environment is likely correct.")
 
     version = pkgversion(@__MODULE__)
-    if min_version <= version && version < max_version
+    version_spec = allowed_versions == "*" ? VersionSpec() : semver_spec(allowed_versions)
+    if version ∈ version_spec
         @info("$LOG_VERSION_OK --"
-            * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
+            * " Expected AiidaDFTK version ∈ $version_spec."
             * " Actual: $(version).")
     else
         msg = ("$LOG_VERSION_MISMATCH --"
-            * " Expected AiidaDFTK version ∈ [$min_version, $max_version)."
+            * " Expected AiidaDFTK version ∈ $version_spec."
             * " Actual: $(version).")
         @error msg
         error(msg)
