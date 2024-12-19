@@ -7,14 +7,14 @@ using InteractiveUtils
 using JLD2
 using JSON3
 using Logging
+using LoggingExtras
 using MPI
 using Pkg
+using Pkg.Versions
 using PrecompileTools
 using TimerOutputs
 using Unitful
 using UnitfulAtomic
-
-export run_json
 
 @template METHODS =
 """
@@ -23,6 +23,7 @@ $(TYPEDSIGNATURES)
 $(DOCSTRING)
 """
 
+include("logging.jl")
 include("parse_kwargs.jl")
 include("store_hdf5.jl")
 
@@ -101,7 +102,25 @@ Run a DFTK calculation from a json input file.
 Output is by default written to `stdout` and `stderr`.
 The list of generated output files is returned.
 """
-function run_json(filename::AbstractString; extra_output_files=String[])
+function run_json(filename::AbstractString; extra_output_files=String[], allowed_versions="*")
+    @info("$LOG_IMPORTS_SUCEEDED --"
+        * " This indicates that AiidaDFTK was installed correctly"
+        * " and that the MPI environment is likely correct.")
+
+    version = pkgversion(@__MODULE__)
+    version_spec = allowed_versions == "*" ? VersionSpec() : semver_spec(allowed_versions)
+    if version ∈ version_spec
+        @info("$LOG_VERSION_OK --"
+            * " Expected AiidaDFTK version ∈ $version_spec."
+            * " Actual: $(version).")
+    else
+        msg = ("$LOG_VERSION_MISMATCH --"
+            * " Expected AiidaDFTK version ∈ $version_spec."
+            * " Actual: $(version).")
+        @error msg
+        error(msg)
+    end
+
     all_output_files = copy(extra_output_files)
 
     if mpi_master()
@@ -162,32 +181,44 @@ function run_json(filename::AbstractString; extra_output_files=String[])
     end
     push!(all_output_files, timingfile)
 
+    @info "$LOG_FINISHED_SUCCESSFULLY."
+
     (; output_files=all_output_files)
 end
 
 
 """
 Run a DFTK calculation from a json input file. The input file name is expected to be passed
-as the first argument when calling Julia (i.e. it should be available via `ARGS`. This
+as the first argument when calling Julia (i.e. it should be available via `ARGS`). This
 function is expected to be called from queuing system jobscripts, for example:
 
 ```bash
 julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
 ```
+
+It automatically dumps a logfile `file.log` (i.e. basename of the input file
+with the log extension), which contains the log messages (i.e. @info, @warn, ...).
+Currently stdout and stderr are still printed.
 """
-function run()
-    inputfile = only(ARGS)
+function run(inputfile; kwargs...)
+    # TODO Json logger ?
+    logfile = first(splitext(basename(inputfile))) * ".log"
     if mpi_master()
-        # Default logging to stdout
+        # Keep logging everything to stderr for manual inspection (AiiDA captures it automatically).
+        # Also route log messages to the log file for automatic parsing in AiiDA.
+        # Unlike SimpleLogger, FileLogger will always flush. It also truncates the file on creation.
+        logger = TeeLogger(current_logger(), FileLogger(logfile))
     else
-        global_logger(NullLogger())
+        logger = NullLogger()
     end
 
-    if expanduser("~/.julia") in Pkg.depots()
-        @warn("Found ~/.julia in Julia depot path. " *
-              "Ensure that you properly specify JULIA_DEPOT_PATH.")
+    with_logger(logger) do
+        if expanduser("~/.julia") in Pkg.depots()
+            @warn("Found ~/.julia in Julia depot path. " *
+                "Ensure that you properly specify JULIA_DEPOT_PATH.")
+        end
+        run_json(inputfile; extra_output_files=[logfile], kwargs...)
     end
-    run_json(inputfile)
 end
 
 
