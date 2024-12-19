@@ -188,10 +188,7 @@ using UnitfulAtomic
             mktempdir(@__DIR__) do dir
                 # Run SCF and check we got all expected files
                 cd(dir) do
-                    (; output_files) = AiidaDFTK.run(joinpath(@__DIR__, inputfile))
-                    for file in output_files
-                        @test isfile(file)
-                    end
+                    AiidaDFTK.run(inputfile=joinpath(@__DIR__, inputfile))
                 end
 
                 @test isfile(joinpath(dir, "scfres.jld2"))

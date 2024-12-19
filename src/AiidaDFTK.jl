@@ -64,11 +64,10 @@ function run_self_consistent_field(data, system, basis)
     runtimeargs    = (; maxtime=Second(get(data["scf"], "maxtime", 60*60*24*366)))
     scfres = self_consistent_field(basis; checkpointargs..., runtimeargs..., kwargs...)
 
-    output_files = [checkpointfile, "self_consistent_field.json"]
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
     save_ψ = get(data["scf"], "save_ψ", false)
     save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
-    (; scfres, output_files)
+    (; scfres)
 end
 
 function run_scf(data, system, basis)
@@ -83,7 +82,6 @@ function run_scf(data, system, basis)
 end
 
 function run_postscf(data, scfres)
-    output_files = String[]
     postscf_calcs = data["postscf"]
     for calc in postscf_calcs
         funcname = calc["\$function"]
@@ -91,18 +89,14 @@ function run_postscf(data, scfres)
         results  = getproperty(DFTK, Symbol(funcname))(scfres; kwargs...)
 
         store_hdf5(funcname * ".hdf5", (; funcname, results))
-        push!(output_files, funcname * ".hdf5")
     end
-    (; output_files)
 end
 
 
 """
-Run a DFTK calculation from a json input file.
-Output is by default written to `stdout` and `stderr`.
-The list of generated output files is returned.
+Run a DFTK calculation after the necessary environment has been setup.
 """
-function run_json(filename::AbstractString; extra_output_files=String[], allowed_versions="*")
+function internal_run(; inputfile::AbstractString, allowed_versions::AbstractString)
     @info("$LOG_IMPORTS_SUCEEDED --"
         * " This indicates that AiidaDFTK was installed correctly"
         * " and that the MPI environment is likely correct.")
@@ -121,10 +115,8 @@ function run_json(filename::AbstractString; extra_output_files=String[], allowed
         error(msg)
     end
 
-    all_output_files = copy(extra_output_files)
-
     if mpi_master()
-        data = open(filename, "r") do io
+        data = open(inputfile, "r") do io
             JSON3.read(io)
         end
     else
@@ -162,13 +154,11 @@ function run_json(filename::AbstractString; extra_output_files=String[], allowed
     end
 
     # Run SCF routine
-    (; scfres, output_files) = run_scf(data, system, basis)
-    append!(all_output_files, output_files)
+    (; scfres) = run_scf(data, system, basis)
 
     # Run Post SCF routines, but only if SCF converged
     if scfres.converged
-        (; output_files) = run_postscf(data, scfres)
-        append!(all_output_files, output_files)
+        run_postscf(data, scfres)
     end
 
     # Dump timings
@@ -179,28 +169,30 @@ function run_json(filename::AbstractString; extra_output_files=String[], allowed
             JSON3.pretty(io, TimerOutputs.todict(DFTK.timer))
         end
     end
-    push!(all_output_files, timingfile)
 
     @info "$LOG_FINISHED_SUCCESSFULLY."
-
-    (; output_files=all_output_files)
 end
 
 
 """
-Run a DFTK calculation from a json input file. The input file name is expected to be passed
-as the first argument when calling Julia (i.e. it should be available via `ARGS`). This
-function is expected to be called from queuing system jobscripts, for example:
+Run a DFTK calculation from a json input file. This function is expected
+to be called from queuing system jobscripts, for example:
 
 ```bash
-julia --project -e 'using AiidaDFTK; AiidaDFTK.run()' /path/to/input/file.json
+julia --project -e 'using AiidaDFTK; AiidaDFTK.run(inputfile="/path/to/input/file.json")'
 ```
 
 It automatically dumps a logfile `file.log` (i.e. basename of the input file
 with the log extension), which contains the log messages (i.e. @info, @warn, ...).
 Currently stdout and stderr are still printed.
+
+Required keyword arguments:
+- `inputfile`: The input file name.
+
+Optional keyword arguments:
+- `allowed_versions`: A range of supported AiidaDFTK versions, in the format supported by Pkg.
 """
-function run(inputfile; kwargs...)
+function run(; inputfile::AbstractString, allowed_versions::AbstractString="*")
     # TODO Json logger ?
     logfile = first(splitext(basename(inputfile))) * ".log"
     if mpi_master()
@@ -217,7 +209,7 @@ function run(inputfile; kwargs...)
             @warn("Found ~/.julia in Julia depot path. " *
                 "Ensure that you properly specify JULIA_DEPOT_PATH.")
         end
-        run_json(inputfile; extra_output_files=[logfile], kwargs...)
+        internal_run(; inputfile, allowed_versions)
     end
 end
 
@@ -238,7 +230,7 @@ end
     mktempdir() do tmpdir
         cd(tmpdir) do
             @compile_workload begin
-                run_json(inputfile)
+                run(; inputfile)
             end
         end
     end
