@@ -16,6 +16,8 @@ using TimerOutputs
 using Unitful
 using UnitfulAtomic
 
+public run
+
 @template METHODS =
 """
 $(TYPEDSIGNATURES)
