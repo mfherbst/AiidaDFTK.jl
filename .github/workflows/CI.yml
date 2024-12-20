@@ -19,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {version: '1.11',    description: 'stable' }
-          - {version: 'nightly', description: 'nightly'}
+          - {version: '1.11', description: 'stable' }
+          - {version: 'pre',  description: 'pre-release'}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
