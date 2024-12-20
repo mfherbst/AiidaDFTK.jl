@@ -36,10 +36,8 @@ function build_system(data)
     atoms = map(data["periodic_system"]["atoms"]) do atom
         symbol   = Symbol(atom["symbol"])
         position = convert(Vector{Float64}, atom["position"]) * u"bohr"
-        pseudopotential        = atom["pseudopotential"]
-        pseudopotential_kwargs = parse_kwargs(get(atom, "pseudopotential_kwargs", Dict()))
         magnetic_moment = convert(Float64, get(atom, "magnetic_moment", 0.0))
-        Atom(symbol, position; pseudopotential, pseudopotential_kwargs, magnetic_moment)
+        Atom(symbol, position; magnetic_moment)
     end
 
     bounding_box = convert(Vector{Vector{Float64}},
@@ -47,9 +45,22 @@ function build_system(data)
     periodic_system(atoms, bounding_box)
 end
 
+function build_pseudopotentials(data, system)
+    pseudopotentials::Dict{Symbol, <:Any} = Dict(data["pseudopotentials"])
+    kwargs = parse_kwargs(get(pseudopotentials, Symbol("\$kwargs"), Dict()))
+    delete!(pseudopotentials, Symbol("\$kwargs"))
+    # load_psp does not accept Dict{Symbol, Any}
+    family = Dict{Symbol, String}(pseudopotentials)
+    load_psp(family, system; kwargs...)
+end
+
 function build_basis(data, system)
-    model = model_DFT(system; parse_kwargs(data["model_kwargs"])...)
-    PlaneWaveBasis(model;     parse_kwargs(data["basis_kwargs"])...)
+    pseudopotentials = build_pseudopotentials(data, system)
+    parsed = DFTK.parse_system(system, pseudopotentials)
+    model = model_DFT(parsed.lattice, parsed.atoms, parsed.positions;
+                      parsed.magnetic_moments,
+                      parse_kwargs(data["model_kwargs"])...)
+    PlaneWaveBasis(model; parse_kwargs(data["basis_kwargs"])...)
 end
 
 function run_geometry_optimisation(data, system, basis)
