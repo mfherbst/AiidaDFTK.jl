@@ -108,11 +108,9 @@ function internal_run(; inputfile::AbstractString, allowed_versions::AbstractStr
             * " Expected AiidaDFTK version ∈ $version_spec."
             * " Actual: $(version).")
     else
-        msg = ("$LOG_VERSION_MISMATCH --"
+        error("$LOG_VERSION_MISMATCH --"
             * " Expected AiidaDFTK version ∈ $version_spec."
             * " Actual: $(version).")
-        @error msg
-        error(msg)
     end
 
     if mpi_master()
@@ -209,7 +207,12 @@ function run(; inputfile::AbstractString, allowed_versions::AbstractString="*")
             @warn("Found ~/.julia in Julia depot path. " *
                 "Ensure that you properly specify JULIA_DEPOT_PATH.")
         end
-        internal_run(; inputfile, allowed_versions)
+        try
+            internal_run(; inputfile, allowed_versions)
+        catch e
+            @error "Failed because of an exception" exception=(e, catch_backtrace())
+            rethrow()
+        end
     end
 end
 
