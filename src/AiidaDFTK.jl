@@ -69,7 +69,7 @@ function run_self_consistent_field(data, system, basis)
     save_scfres("self_consistent_field.json", scfres; save_ψ=false, save_ρ=false)
     save_ψ = get(data["scf"], "save_ψ", false)
     save_scfres(checkpointfile, scfres; save_ψ, save_ρ=true)
-    (; scfres)
+    scfres
 end
 
 function run_scf(data, system, basis)
@@ -154,7 +154,7 @@ function _run(; inputfile::AbstractString, allowed_versions::AbstractString)
     end
 
     # Run SCF routine
-    (; scfres) = run_scf(data, system, basis)
+    scfres = run_scf(data, system, basis)
 
     # Run Post SCF routines, but only if SCF converged
     if scfres.converged
