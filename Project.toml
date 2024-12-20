@@ -22,7 +22,7 @@ UnitfulAtomic = "a7773ee8-282e-5fa2-be4e-bd808c38a91a"
 
 [compat]
 AtomsBase = "0.3"
-DFTK = "0.6.20"
+DFTK = "0.6.20, 0.7"
 DocStringExtensions = "0.9"
 HDF5 = "0.17"
 JLD2 = "0.4, 0.5"
