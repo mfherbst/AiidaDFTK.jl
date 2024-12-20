@@ -98,7 +98,7 @@ end
 """
 Run a DFTK calculation after the necessary environment has been setup.
 """
-function internal_run(; inputfile::AbstractString, allowed_versions::AbstractString)
+function _run(; inputfile::AbstractString, allowed_versions::AbstractString)
     @info("$LOG_IMPORTS_SUCEEDED --"
         * " This indicates that AiidaDFTK was installed correctly"
         * " and that the MPI environment is likely correct.")
@@ -210,7 +210,7 @@ function run(; inputfile::AbstractString, allowed_versions::AbstractString="*")
                 "Ensure that you properly specify JULIA_DEPOT_PATH.")
         end
         try
-            internal_run(; inputfile, allowed_versions)
+            _run(; inputfile, allowed_versions)
         catch e
             @error "Failed because of an exception" exception=(e, catch_backtrace())
             rethrow()
